@@ -103,6 +103,9 @@ def set_my_focus_behaviors():
     if not isinstance(behavior_ids, list):
         return jsonify({'success': False, 'error': 'behaviorIds must be an array'}), 400
     
+    if len(behavior_ids) < 3:
+        return jsonify({'success': False, 'error': 'Select 3 to 5 focus behaviors'}), 400
+    
     if len(behavior_ids) > 5:
         return jsonify({'success': False, 'error': 'Maximum 5 focus behaviors allowed'}), 400
     

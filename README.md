@@ -27,43 +27,102 @@ Configure system settings, view analytics, and manage users.
   <img src="screenshots/admin-dashboard.png" alt="Admin Dashboard" width="600"/>
 </p>
 
-## Quick start
+## Hierarchy & Roles
 
-1. **Backend** (from repo root):
+Dibby Dollars uses a cumulative permission system:
+
+- **Student:** View personal balance, savings rank, and transaction history.
+- **Teacher:** Award DB$ to any student, manage focus behaviors (quick-award buttons), and conduct raffle draws.
+- **Admin:** Configure system-wide settings (interest rate, raffle defaults), manage all users (including teachers), and trigger manual interest calculations.
+
+## System Mechanics
+
+### 📈 Weekly Interest
+The system encourages long-term saving through automated interest:
+- **Calculation:** Interest is calculated on the **minimum balance** a student held during the week. 
+- **Capture:** A background service takes a "snapshot" of all balances every night at 23:55.
+- **Distribution:** Interest is automatically applied every **Sunday at 23:59**.
+- **Rate:** Set by Admins (default is 2%).
+
+### 🎟️ Weekly Raffles
+Teachers can conduct raffles during class or assemblies:
+- **Selection:** A winner is randomly selected from all active students.
+- **Prizes:** The default prize (e.g., 50 DB$) is configurable by Admins.
+- **Integrity:** Every draw is recorded in the raffle history for transparency.
+
+### 🎯 Focus Behaviors
+To make awarding DB$ fast, Teachers can select 3-5 "Focus Behaviors" (e.g., *Leadership*, *Teamwork*). These appear as bright, easy-click buttons on the Teacher Dashboard.
+
+## Quick Start
+
+### Prerequisites
+
+- Python 3.13+ and pip
+- Node.js 22+ and npm
+- Git
+
+### Setup
+
+1. **Clone and navigate:**
+   ```bash
+   git clone <repo-url>
+   cd Dibby_Dollars
+   ```
+
+2. **Backend setup:**
    ```bash
    cd backend
    python -m venv venv
    venv\Scripts\activate   # Windows; or source venv/bin/activate on macOS/Linux
    pip install -r requirements.txt
+
+   # Create environment file
    cp .env.example .env
-   set FLASK_APP=app.py    # or export FLASK_APP=app.py
+
+   set FLASK_APP=app.py
    flask db upgrade
    python seed.py
    flask run
    ```
-2. **Frontend** (new terminal):
+
+3. **Frontend setup** (new terminal):
    ```bash
    cd frontend
    npm install
    cp .env.example .env.local
    npm run dev
    ```
-3. Open http://localhost:5173 and log in with **teacher** / **teacher123** or **admin** / **admin123** (see [backend/README.md](backend/README.md) for seed users).
 
-## Project layout
+4. **Access the app:**
+   - Open http://localhost:5173
+   - **Log in as Admin:** `admin` / `admin123`
+   - **Log in as Teacher:** `teacher` / `teacher123`
+   - **Log in as Student:**
+     - `alice.johnson` / `1111`
+     - `bob.smith` / `2222`
+     - `charlie.brown` / `3333`
 
-- **backend/** – Flask 3.x REST API (SQLite/Postgres, SQLAlchemy, APScheduler for interest).
-- **frontend/** – React 18 + TypeScript + Vite + MUI (dark theme, glassmorphism).
-- **notes/** – Implementation plan and design notes.
+## Production Deployment
+
+**Backend:**
+- Use a production-grade WSGI server like **Gunicorn**.
+- Set `FLASK_ENV=production` and a secure `SECRET_KEY`.
+- Use a robust database like **PostgreSQL** for concurrent transaction handling.
+- Ensure the background scheduler (`APScheduler`) has persistent storage if using multiple workers.
+
+**Frontend:**
+- Build the optimized production bundle: `npm run build`.
+- Serve the `dist/` folder via a static host (Vercel, Netlify, Nginx).
+- Ensure `VITE_API_URL` points to your production backend.
 
 ## Documentation
 
-- [Backend setup, env vars, migrations, deployment](backend/README.md)
-- [Frontend setup, env vars, scripts, deployment](frontend/README.md)
-- [Implementation plan](notes/implementation_plan.md)
+- [Backend Guide](backend/README.md) – Env vars, migrations, scheduler details.
+- [Frontend Guide](frontend/README.md) – Component structure, state (Zustand).
+- [Implementation Plan](notes/implementation_plan.md) – Original architectural vision.
 
-## Tests
+## Testing
 
-- **Backend:** `cd backend && pytest tests/ -v`
-- **Frontend unit:** `cd frontend && npm run test`
-- **Frontend E2E:** Start backend + frontend, then `cd frontend && npm run cypress:run`
+- **Backend:** `cd backend && pytest`
+- **Frontend:** `cd frontend && npm run test`
+- **E2E:** `cd frontend && npm run cypress:run`

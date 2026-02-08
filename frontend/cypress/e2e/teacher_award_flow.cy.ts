@@ -18,9 +18,9 @@ describe('Teacher award flow', () => {
     cy.url().should('include', '/teacher', { timeout: 10000 });
     cy.contains('Award', { timeout: 10000 }).should('be.visible');
 
-    // Student autocomplete: focus and type to open options
-    cy.get('input').filter('[type="text"]').first().click().type('student');
-    cy.get('[role="option"]').first().click();
+    // Select student from left sidebar (click first student in list)
+    cy.contains('Students', { timeout: 5000 }).should('be.visible');
+    cy.get('[class*="MuiListItemButton"]').first().click();
 
     // Click any focus behavior button (e.g. Helping Others, On Task)
     cy.get('button').contains('Helping Others').click();

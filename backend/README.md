@@ -26,8 +26,23 @@ The API runs at `http://localhost:5000`. Default seed creates admin (admin/admin
 | `SECRET_KEY`   | Session signing key                  | dev key (change in production)       |
 | `DATABASE_URL` | Database connection URL               | SQLite in `instance/dibby_dollars.db` |
 | `FLASK_ENV`    | `development`, `production`, `testing` | unset (development)                |
+| `CORS_ORIGINS` | Allowed frontend origins (comma-separated) | `http://localhost:5173,http://127.0.0.1:5173` |
 
 Copy `.env.example` to `.env` and set at least `SECRET_KEY` for production.
+
+### Production CORS Configuration
+
+Set `CORS_ORIGINS` to your production frontend URL(s):
+
+```bash
+CORS_ORIGINS=https://dibby.yourschool.edu
+```
+
+For multiple domains, use comma separation (no spaces):
+
+```bash
+CORS_ORIGINS=https://dibby.yourschool.edu,https://admin.yourschool.edu
+```
 
 ## Tests
 
@@ -52,10 +67,10 @@ Use `flask db downgrade` to roll back one revision.
 ## Deployment
 
 - Set `FLASK_ENV=production` and a strong `SECRET_KEY`.
+- Set `CORS_ORIGINS` to your production frontend URL(s).
 - Prefer PostgreSQL for production: set `DATABASE_URL` to your Postgres connection string.
 - Run `flask db upgrade` after deploying code that includes new migrations.
 - Use a production WSGI server (e.g. Gunicorn): `gunicorn -w 4 -b 0.0.0.0:5000 "app:create_app()"`.
-- Ensure CORS allows your frontend origin (see `app.py`; update `CORS(app, origins=[...])` for production).
 
 ## API Endpoints
 
