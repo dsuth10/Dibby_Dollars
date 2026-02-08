@@ -296,8 +296,21 @@ export function TeacherDashboard() {
         try {
             const response = await raffleApi.draw(parseInt(rafflePrize), raffleDescription);
             if (response.data.success) {
+                const winner = response.data.winner;
+
+                // Update students list with winner's new balance
+                setStudents(prev => prev.map(s =>
+                    s.id === winner.id ? { ...s, balance: winner.balance } : s
+                ));
+
+                // If winner is currently selected, update selected student too
+                if (selectedStudent?.id === winner.id) {
+                    setSelectedStudent(prev => prev ? { ...prev, balance: winner.balance } : null);
+                }
+
+                // Show raffle result dialog
                 setRaffleResult({
-                    winner: response.data.winner,
+                    winner: winner,
                     amount: response.data.raffle.prizeAmount
                 });
             }
