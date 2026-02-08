@@ -2,6 +2,31 @@
 
 A school-wide reward banking web app for tracking Dibby Dollars (DB$): balances, interest, raffles, and analytics. Built for primary students with separate portals for Students, Teachers, and Admins.
 
+## Screenshots
+
+### Login Portal
+<p align="center">
+  <img src="screenshots/login-page.png" alt="Login Page" width="400"/>
+</p>
+
+### Student Dashboard
+Track your balance, view your ranking, and see your transaction history.
+<p align="center">
+  <img src="screenshots/student-dashboard.png" alt="Student Dashboard" width="400"/>
+</p>
+
+### Teacher Dashboard
+Award Dibby Dollars to students and conduct weekly raffles.
+<p align="center">
+  <img src="screenshots/teacher-dashboard.png" alt="Teacher Dashboard" width="400"/>
+</p>
+
+### Admin Control Panel
+Configure system settings, view analytics, and manage users.
+<p align="center">
+  <img src="screenshots/admin-dashboard.png" alt="Admin Dashboard" width="600"/>
+</p>
+
 ## Quick start
 
 1. **Backend** (from repo root):
