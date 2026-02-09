@@ -118,6 +118,7 @@ Teachers pick 3–5 “Focus Behaviors” (e.g. *Helping Others*, *Staying On Ta
    python seed.py
    flask run
    ```
+   The default SQLite database lives in `backend/instance/dibby_dollars.db`. The app resolves this path from the backend directory, so the backend will find the database whether you run `flask run` or `python app.py` from the project root or from `backend/`.
 
 3. **Frontend setup** (new terminal):
    ```bash

@@ -10,7 +10,7 @@ If you haven’t pulled the HTTPS config yet:
 
 ```bash
 cd ~/dibby-dollars
-git pull origin master
+git pull origin main
 ```
 
 You should see `deployment/nginx/dibby-dollars.conf` in the repo.

@@ -23,14 +23,12 @@ import {
 } from '@mui/material';
 import {
     Add,
-    EmojiEvents,
-    Casino,
     Person,
     Savings,
     CheckCircle,
     Settings,
 } from '@mui/icons-material';
-import { studentsApi, transactionsApi, behaviorsApi, raffleApi } from '../services/api';
+import { studentsApi, transactionsApi, behaviorsApi } from '../services/api';
 import { Leaderboard, BehaviorChart, StudentSidebar, SelectedStudentBanner } from '../components';
 
 interface Student {
@@ -58,13 +56,7 @@ export function TeacherDashboard() {
     const [depositOpen, setDepositOpen] = useState(false);
     const [depositAmount, setDepositAmount] = useState('');
 
-    // Raffle dialog
-    const [raffleOpen, setRaffleOpen] = useState(false);
-    const [rafflePrize, setRafflePrize] = useState('50');
-    const [raffleDescription, setRaffleDescription] = useState('');
-    const [raffleResult, setRaffleResult] = useState<{ winner: Student; amount: number } | null>(null);
-
-    // Tab: 0 = Award & Raffle, 1 = Analytics
+    // Tab: 0 = Award, 1 = Analytics
     const [tab, setTab] = useState(0);
 
     // Snackbar
@@ -292,40 +284,6 @@ export function TeacherDashboard() {
         }
     };
 
-    const handleRaffle = async () => {
-        try {
-            const response = await raffleApi.draw(parseInt(rafflePrize), raffleDescription);
-            if (response.data.success) {
-                const winner = response.data.winner;
-                const prizeAmount = (response.data.raffle?.prizeAmount ?? parseInt(rafflePrize, 10)) || 50;
-                // Use API balance if present and numeric, else compute from previous balance + prize
-                const previousBalance = (students.find(s => s.id === winner.id)?.balance) ?? 0;
-                const newBalance = typeof winner.balance === 'number'
-                    ? winner.balance
-                    : previousBalance + prizeAmount;
-                const winnerWithBalance = { ...winner, balance: newBalance };
-
-                // Update students list with winner's new balance (synchronous state update)
-                setStudents(prev => prev.map(s =>
-                    s.id === winner.id ? { ...s, balance: newBalance } : s
-                ));
-
-                // If winner is currently selected, update selected student too
-                if (selectedStudent?.id === winner.id) {
-                    setSelectedStudent(prev => prev ? { ...prev, balance: newBalance } : null);
-                }
-
-                // Show raffle result dialog (use winnerWithBalance so dialog shows correct balance)
-                setRaffleResult({
-                    winner: winnerWithBalance,
-                    amount: prizeAmount
-                });
-            }
-        } catch (err) {
-            setSnackbar({ open: true, message: 'Failed to conduct raffle', severity: 'error' });
-        }
-    };
-
     if (loading) {
         return (
             <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '60vh' }}>
@@ -360,7 +318,7 @@ export function TeacherDashboard() {
                     Teacher Dashboard
                 </Typography>
                 <Tabs value={tab} onChange={(_, v) => setTab(v)} sx={{ mb: 3 }}>
-                    <Tab label="Award & Raffle" id="teacher-tab-0" aria-controls="teacher-panel-0" />
+                    <Tab label="Award" id="teacher-tab-0" aria-controls="teacher-panel-0" />
                     <Tab label="Analytics" id="teacher-tab-1" aria-controls="teacher-panel-1" />
                 </Tabs>
 
@@ -444,30 +402,6 @@ export function TeacherDashboard() {
                     </Card>
                 </Grid>
 
-                {/* Raffle */}
-                <Grid size={{ xs: 12, md: 6 }}>
-                    <Card sx={{
-                        background: 'linear-gradient(135deg, rgba(255, 179, 71, 0.1) 0%, rgba(255, 77, 109, 0.1) 100%)',
-                        border: '1px solid rgba(255, 179, 71, 0.3)',
-                    }}>
-                        <CardContent>
-                            <Typography variant="h6" sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
-                                <Casino sx={{ color: 'warning.main' }} /> Weekly Raffle
-                            </Typography>
-
-                            <Button
-                                variant="contained"
-                                color="warning"
-                                fullWidth
-                                onClick={() => setRaffleOpen(true)}
-                                startIcon={<EmojiEvents />}
-                            >
-                                Conduct Raffle Draw
-                            </Button>
-                        </CardContent>
-                    </Card>
-                </Grid>
-
                 {/* Student Management */}
                 <Grid size={{ xs: 12, md: 6 }}>
                     <Card>
@@ -519,58 +453,6 @@ export function TeacherDashboard() {
                 <DialogActions>
                     <Button onClick={() => setDepositOpen(false)}>Cancel</Button>
                     <Button onClick={handleDeposit} variant="contained">Deposit</Button>
-                </DialogActions>
-            </Dialog>
-
-            {/* Raffle Dialog */}
-            <Dialog open={raffleOpen} onClose={() => { setRaffleOpen(false); setRaffleResult(null); }}>
-                <DialogTitle>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                        <Casino sx={{ color: 'warning.main' }} />
-                        {raffleResult ? 'Raffle Winner!' : 'Conduct Raffle Draw'}
-                    </Box>
-                </DialogTitle>
-                <DialogContent>
-                    {raffleResult ? (
-                        <Box sx={{ textAlign: 'center', py: 3 }}>
-                            <EmojiEvents sx={{ fontSize: 80, color: 'warning.main', mb: 2 }} />
-                            <Typography variant="h4" sx={{ fontWeight: 700, mb: 1 }}>
-                                {raffleResult.winner.fullName}
-                            </Typography>
-                            <Typography variant="h6" color="secondary.main">
-                                Wins {raffleResult.amount} DB$!
-                            </Typography>
-                        </Box>
-                    ) : (
-                        <>
-                            <TextField
-                                fullWidth
-                                label="Prize Amount (DB$)"
-                                type="number"
-                                value={rafflePrize}
-                                onChange={(e) => setRafflePrize(e.target.value)}
-                                sx={{ mt: 2 }}
-                            />
-                            <TextField
-                                fullWidth
-                                label="Prize Description (optional)"
-                                value={raffleDescription}
-                                onChange={(e) => setRaffleDescription(e.target.value)}
-                                sx={{ mt: 2 }}
-                                placeholder="e.g., Weekly Assembly Jackpot"
-                            />
-                        </>
-                    )}
-                </DialogContent>
-                <DialogActions>
-                    <Button onClick={() => { setRaffleOpen(false); setRaffleResult(null); }}>
-                        {raffleResult ? 'Close' : 'Cancel'}
-                    </Button>
-                    {!raffleResult && (
-                        <Button onClick={handleRaffle} variant="contained" color="warning">
-                            Draw Winner
-                        </Button>
-                    )}
                 </DialogActions>
             </Dialog>
 

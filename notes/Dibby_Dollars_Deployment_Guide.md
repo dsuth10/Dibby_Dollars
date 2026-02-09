@@ -1,7 +1,7 @@
 # Dibby Dollars – Deployment & Update Guide
 
 **Created:** February 2026  
-**Purpose:** Document the complete Hostinger VPS deployment for Dibby Dollars and the workflow for updating the live site from the master branch.
+**Purpose:** Document the complete Hostinger VPS deployment for Dibby Dollars and the workflow for updating the live site from the main branch.
 
 ---
 
@@ -43,7 +43,7 @@ This guide covers:
 **Architecture:**
 
 ```
-Local dev (feature branch) → merge to master → push to GitHub
+Local dev (feature branch) → merge to main → push to GitHub
                                                     ↓
 VPS: git pull → backend venv + migrations / frontend build → systemctl restart
                                                     ↓
@@ -106,7 +106,7 @@ if __name__ == '__main__':
     app.run(debug=True, port=5000)
 ```
 
-Commit, push to master, then on VPS: `cd ~/dibby-dollars && git pull && sudo systemctl restart dibby-dollars`.
+Commit, push to main, then on VPS: `cd ~/dibby-dollars && git pull && sudo systemctl restart dibby-dollars`.
 
 ---
 
@@ -249,13 +249,13 @@ To exit full-screen output from `systemctl status` or `journalctl`, press **q** 
 
 ### Workflow Overview
 
-Use feature branches for development; merge to `master` when ready; deploy by pulling on the VPS and rebuilding/restarting as needed.
+Use feature branches for development; merge to `main` when ready; deploy by pulling on the VPS and rebuilding/restarting as needed.
 
 ```mermaid
 graph LR
     Local[Local Dev] -->|commit| Feature[feature branch]
-    Feature -->|PR or merge| Master[master branch]
-    Master -->|git push| GitHub[GitHub origin/master]
+    Feature -->|PR or merge| Main[main branch]
+    Main -->|git push| GitHub[GitHub origin/main]
     GitHub -->|git pull| VPS[VPS dibby-dollars]
     VPS -->|rebuild and restart| Live[Live Site]
 ```
@@ -269,8 +269,8 @@ graph LR
 1. **Create a feature branch** for your changes:
 
    ```bash
-   git checkout master
-   git pull origin master
+   git checkout main
+   git pull origin main
    git checkout -b feature/your-feature-name
    ```
 
@@ -292,18 +292,18 @@ graph LR
    git push origin feature/your-feature-name
    ```
 
-5. **Merge into master** (choose one):
+5. **Merge into main** (choose one):
 
    **Option A – Pull Request (recommended for review):**
-   - On GitHub, open a PR from `feature/your-feature-name` into `master`
+   - On GitHub, open a PR from `feature/your-feature-name` into `main`
    - Review, approve, merge
-   - Locally: `git checkout master && git pull origin master`
+   - Locally: `git checkout main && git pull origin main`
 
    **Option B – Local merge (solo dev):**
    ```bash
-   git checkout master
+   git checkout main
    git merge feature/your-feature-name
-   git push origin master
+   git push origin main
    ```
 
 #### Deployment phase (VPS)
@@ -320,7 +320,7 @@ graph LR
 
    ```bash
    cd ~/dibby-dollars
-   git pull origin master
+   git pull origin main
    ```
 
 8. **Backend updates** (if backend code or dependencies changed):
@@ -374,7 +374,7 @@ graph LR
 
 ```bash
 # On VPS
-cd ~/dibby-dollars && git pull origin master
+cd ~/dibby-dollars && git pull origin main
 cd backend && source venv/bin/activate && pip install -r requirements.txt && deactivate
 sudo systemctl restart dibby-dollars
 ```
@@ -383,7 +383,7 @@ sudo systemctl restart dibby-dollars
 
 ```bash
 # On VPS
-cd ~/dibby-dollars && git pull origin master
+cd ~/dibby-dollars && git pull origin main
 cd frontend && npm ci && VITE_API_URL=https://dibby.mrsutherland.net/api npm run build
 # No restart needed; Nginx serves updated static files from frontend/dist/
 ```
@@ -392,7 +392,7 @@ cd frontend && npm ci && VITE_API_URL=https://dibby.mrsutherland.net/api npm run
 
 ```bash
 # On VPS
-cd ~/dibby-dollars && git pull origin master
+cd ~/dibby-dollars && git pull origin main
 cd backend && source venv/bin/activate && pip install -r requirements.txt && deactivate
 cd ../frontend && npm ci && VITE_API_URL=https://dibby.mrsutherland.net/api npm run build
 sudo systemctl restart dibby-dollars
@@ -434,14 +434,14 @@ If a deployment breaks production:
    - If migrations were applied: `cd backend && source venv/bin/activate && export FLASK_APP=app.py && flask db downgrade -1` (or to a specific revision)
    - Restart: `sudo systemctl restart dibby-dollars`
 
-4. **Fix the issue locally** on a branch, test, then merge to master and deploy again. For a proper rollback on master, use `git revert` or merge a revert commit instead of leaving the VPS on a detached HEAD.
+4. **Fix the issue locally** on a branch, test, then merge to main and deploy again. For a proper rollback on main, use `git revert` or merge a revert commit instead of leaving the VPS on a detached HEAD.
 
 ---
 
 ### Best Practices
 
-1. **Test locally first** – Run backend and frontend locally and test before pushing to master.
-2. **Keep master stable** – Do development on feature branches; merge to master only when ready for production.
+1. **Test locally first** – Run backend and frontend locally and test before pushing to main.
+2. **Keep main stable** – Do development on feature branches; merge to main only when ready for production.
 3. **Document breaking changes** – Use clear commit messages and, if needed, short notes in the deployment guide.
 4. **Back up the database before schema migrations:**
    ```bash

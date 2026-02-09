@@ -32,8 +32,10 @@ import {
     School,
     Refresh,
     Add,
+    Casino,
+    EmojiEvents,
 } from '@mui/icons-material';
-import { adminApi, analyticsApi } from '../services/api';
+import { adminApi, analyticsApi, raffleApi } from '../services/api';
 import { Leaderboard, BehaviorChart } from '../components';
 
 interface ConfigState {
@@ -82,6 +84,13 @@ export function AdminDashboard() {
         severity: 'success',
     });
 
+    // Raffle dialog
+    const [raffleOpen, setRaffleOpen] = useState(false);
+    const [rafflePrize, setRafflePrize] = useState('50');
+    const [raffleDescription, setRaffleDescription] = useState('');
+    const [raffleResult, setRaffleResult] = useState<{ winner: { fullName: string }; amount: number } | null>(null);
+    const [raffleDrawing, setRaffleDrawing] = useState(false);
+
     const fetchData = async () => {
         try {
             setLoading(true);
@@ -93,10 +102,12 @@ export function AdminDashboard() {
 
             if (configRes.data.success) {
                 const cfg = configRes.data.config;
+                const defaultPrize = cfg.raffle_prize_default?.value ?? '50';
                 setConfig({
                     interestRate: cfg.interest_rate?.value ?? '2',
-                    rafflePrizeDefault: cfg.raffle_prize_default?.value ?? '50',
+                    rafflePrizeDefault: defaultPrize,
                 });
+                setRafflePrize(defaultPrize);
             }
             if (usersRes.data.success) {
                 setUsers(usersRes.data.users);
@@ -145,6 +156,35 @@ export function AdminDashboard() {
         }
     };
 
+    const handleCloseRaffleDialog = () => {
+        setRaffleOpen(false);
+        setRaffleResult(null);
+    };
+
+    const handleRaffleDraw = async () => {
+        const amount = parseInt(rafflePrize, 10);
+        if (isNaN(amount) || amount <= 0) {
+            setSnackbar({ open: true, message: 'Enter a valid prize amount', severity: 'error' });
+            return;
+        }
+        setRaffleDrawing(true);
+        try {
+            const response = await raffleApi.draw(amount, raffleDescription);
+            if (response.data.success) {
+                const prizeAmount = response.data.raffle?.prizeAmount ?? amount;
+                setRaffleResult({
+                    winner: response.data.winner,
+                    amount: prizeAmount,
+                });
+            }
+        } catch (err: unknown) {
+            const msg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error ?? 'Failed to conduct raffle';
+            setSnackbar({ open: true, message: msg, severity: 'error' });
+        } finally {
+            setRaffleDrawing(false);
+        }
+    };
+
     const handleCreateUser = async () => {
         if (!newUser.username.trim() || !newUser.password || !newUser.firstName.trim() || !newUser.lastName.trim()) {
             setSnackbar({ open: true, message: 'All fields required', severity: 'error' });
@@ -182,7 +222,7 @@ export function AdminDashboard() {
                     <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 2 }}>
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                             <School color="primary" />
-                            <Typography variant="h6">Need to award DB$ or run a raffle?</Typography>
+                            <Typography variant="h6">Need to award DB$?</Typography>
                         </Box>
                         <Button variant="outlined" onClick={() => navigate('/teacher')} startIcon={<School />}>
                             Go to Teacher Portal
@@ -247,6 +287,29 @@ export function AdminDashboard() {
                                     Manually run weekly interest for all students (normally runs automatically on Sundays).
                                 </Typography>
                             </Box>
+                        </CardContent>
+                    </Card>
+                </Grid>
+
+                {/* Raffle Draw */}
+                <Grid size={{ xs: 12, md: 6 }}>
+                    <Card sx={{
+                        background: 'linear-gradient(135deg, rgba(255, 179, 71, 0.1) 0%, rgba(255, 77, 109, 0.1) 100%)',
+                        border: '1px solid rgba(255, 179, 71, 0.3)',
+                    }}>
+                        <CardContent>
+                            <Typography variant="h6" sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
+                                <Casino sx={{ color: 'warning.main' }} /> Weekly Raffle
+                            </Typography>
+                            <Button
+                                variant="contained"
+                                color="warning"
+                                fullWidth
+                                onClick={() => { setRafflePrize(config.rafflePrizeDefault); setRaffleOpen(true); }}
+                                startIcon={<EmojiEvents />}
+                            >
+                                Conduct Raffle Draw
+                            </Button>
                         </CardContent>
                     </Card>
                 </Grid>
@@ -340,6 +403,65 @@ export function AdminDashboard() {
                     </Card>
                 </Grid>
             </Grid>
+
+            {/* Raffle Dialog */}
+            <Dialog open={raffleOpen} onClose={handleCloseRaffleDialog}>
+                <DialogTitle>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <Casino sx={{ color: 'warning.main' }} />
+                        {raffleResult ? 'Raffle Winner!' : 'Conduct Raffle Draw'}
+                    </Box>
+                </DialogTitle>
+                <DialogContent>
+                    {raffleResult ? (
+                        <Box sx={{ textAlign: 'center', py: 3 }}>
+                            <EmojiEvents sx={{ fontSize: 80, color: 'warning.main', mb: 2 }} />
+                            <Typography variant="h4" sx={{ fontWeight: 700, mb: 1 }}>
+                                {raffleResult.winner.fullName}
+                            </Typography>
+                            <Typography variant="h6" color="secondary.main">
+                                Wins {raffleResult.amount} DB$!
+                            </Typography>
+                        </Box>
+                    ) : (
+                        <>
+                            <TextField
+                                fullWidth
+                                label="Prize Amount (DB$)"
+                                type="number"
+                                value={rafflePrize}
+                                onChange={(e) => setRafflePrize(e.target.value)}
+                                sx={{ mt: 2 }}
+                                inputProps={{ min: 1 }}
+                            />
+                            <TextField
+                                fullWidth
+                                label="Prize Description (optional)"
+                                value={raffleDescription}
+                                onChange={(e) => setRaffleDescription(e.target.value)}
+                                sx={{ mt: 2 }}
+                                placeholder="e.g., Weekly Assembly Jackpot"
+                            />
+                        </>
+                    )}
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={handleCloseRaffleDialog}>
+                        {raffleResult ? 'Close' : 'Cancel'}
+                    </Button>
+                    {!raffleResult && (
+                        <Button
+                            onClick={handleRaffleDraw}
+                            variant="contained"
+                            color="warning"
+                            disabled={raffleDrawing}
+                            startIcon={raffleDrawing ? <CircularProgress size={16} /> : undefined}
+                        >
+                            {raffleDrawing ? 'Drawing...' : 'Draw Winner'}
+                        </Button>
+                    )}
+                </DialogActions>
+            </Dialog>
 
             {/* Create User Dialog */}
             <Dialog open={createOpen} onClose={() => setCreateOpen(false)} maxWidth="sm" fullWidth>

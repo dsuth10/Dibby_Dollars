@@ -2,6 +2,7 @@
 Dibby Dollars Backend - Flask Application Factory
 """
 import os
+from pathlib import Path
 from flask import Flask
 from flask_cors import CORS
 from flask_migrate import Migrate
@@ -17,15 +18,23 @@ def create_app(config_name=None):
     
     # Configuration
     app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev-secret-key-change-in-production')
+    # Resolve backend dir: same dir as this file if it contains "api", else backend/ under project root
+    _here = Path(__file__).resolve().parent
+    _backend_dir = str(_here) if (_here / "api").is_dir() else str(_here / "backend")
+    _instance_dir = os.path.join(_backend_dir, "instance")
+    _default_db_path = os.path.join(_instance_dir, 'dibby_dollars.db')
+    # Forward slashes work for SQLite on Windows; avoid URL-encoding (sqlite3 can fail with %20)
+    _path_uri = _default_db_path.replace("\\", "/")
+    _default_db_uri = "sqlite:///" + _path_uri
     app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get(
-        'DATABASE_URL', 
-        f"sqlite:///{os.path.join(app.instance_path, 'dibby_dollars.db')}"
+        'DATABASE_URL',
+        _default_db_uri
     )
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     
     # Ensure instance folder exists
     try:
-        os.makedirs(app.instance_path)
+        os.makedirs(_instance_dir, exist_ok=True)
     except OSError:
         pass
     
@@ -55,4 +64,5 @@ def create_app(config_name=None):
 app = create_app()
 
 if __name__ == '__main__':
-    app.run(debug=True, port=5000)
+    port = int(os.environ.get('PORT', os.environ.get('FLASK_RUN_PORT', 5000)))
+    app.run(debug=True, port=port)

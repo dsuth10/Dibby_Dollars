@@ -9,13 +9,13 @@ import random
 
 from api import db
 from api.models import User, Transaction, TransactionType, UserRole, RaffleDraw, SystemConfig
-from api.middleware import teacher_required, get_current_user
+from api.middleware import admin_required, teacher_required, get_current_user
 
 raffle_bp = Blueprint('raffle', __name__)
 
 
 @raffle_bp.route('/draw', methods=['POST'])
-@teacher_required
+@admin_required
 def conduct_draw():
     """
     Conduct a raffle draw. Randomly selects a winner from all active students.
