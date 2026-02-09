@@ -1,0 +1,84 @@
+---
+description: Enforce develop/main branch workflow for Dibby Dollars project
+alwaysApply: true
+---
+
+# Git Workflow Standards
+
+This project uses a **two-branch workflow**:
+- `develop` - Active development branch (test on localhost)
+- `main` - Production-ready code (deploys to VPS)
+
+## Branch Rules
+
+### ✅ CORRECT Workflow
+
+**Daily Development:**
+```bash
+git checkout develop
+# Make changes, test on localhost
+git add .
+git commit -m "feat: description"
+git push origin develop
+```
+
+**Release to Production:**
+```bash
+git checkout main
+git pull origin main
+git merge develop
+git push origin main
+# Then deploy to VPS
+git checkout develop  # Return to development
+```
+
+**VPS Deployment:**
+```bash
+ssh appuser@vps-ip
+cd ~/dibby-dollars
+git pull origin main  # Always use 'main', not 'master'
+# Run deployment steps...
+```
+
+### ❌ INCORRECT Patterns
+
+```bash
+# DON'T commit directly to main
+git checkout main
+git commit -m "quick fix"  # ❌ Use develop branch
+
+# DON'T use old branch names
+git pull origin master  # ❌ Use 'main' instead
+
+# DON'T stay on main after merging
+git checkout main
+git merge develop
+# ❌ Missing: git checkout develop
+```
+
+## AI Assistant Guidelines
+
+When working with this project:
+
+1. **Development work** → Ensure we're on `develop` branch
+2. **Production release** → Guide through merge workflow
+3. **VPS commands** → Always reference `main` branch, never `master`
+4. **After merging to main** → Remind to switch back to `develop`
+5. **Deployment docs** → Use `git pull origin main` in examples
+
+## Quick Reference
+
+| Task | Branch | Command |
+|------|--------|---------|
+| New feature | `develop` | `git checkout develop` |
+| Bug fix | `develop` | `git checkout develop` |
+| Deploy to prod | `main` | `git checkout main && git merge develop` |
+| VPS pull | `main` | `git pull origin main` |
+| Continue dev | `develop` | `git checkout develop` |
+
+## Important Notes
+
+- The `develop` branch is **permanent** - it never gets deleted
+- `main` branch contains only production-ready, tested code
+- Test everything on localhost (develop branch) before merging to main
+- VPS always pulls from `main` branch for production deployments
