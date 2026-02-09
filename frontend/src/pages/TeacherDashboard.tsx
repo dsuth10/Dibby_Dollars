@@ -297,21 +297,28 @@ export function TeacherDashboard() {
             const response = await raffleApi.draw(parseInt(rafflePrize), raffleDescription);
             if (response.data.success) {
                 const winner = response.data.winner;
+                const prizeAmount = (response.data.raffle?.prizeAmount ?? parseInt(rafflePrize, 10)) || 50;
+                // Use API balance if present and numeric, else compute from previous balance + prize
+                const previousBalance = (students.find(s => s.id === winner.id)?.balance) ?? 0;
+                const newBalance = typeof winner.balance === 'number'
+                    ? winner.balance
+                    : previousBalance + prizeAmount;
+                const winnerWithBalance = { ...winner, balance: newBalance };
 
-                // Update students list with winner's new balance
+                // Update students list with winner's new balance (synchronous state update)
                 setStudents(prev => prev.map(s =>
-                    s.id === winner.id ? { ...s, balance: winner.balance } : s
+                    s.id === winner.id ? { ...s, balance: newBalance } : s
                 ));
 
                 // If winner is currently selected, update selected student too
                 if (selectedStudent?.id === winner.id) {
-                    setSelectedStudent(prev => prev ? { ...prev, balance: winner.balance } : null);
+                    setSelectedStudent(prev => prev ? { ...prev, balance: newBalance } : null);
                 }
 
-                // Show raffle result dialog
+                // Show raffle result dialog (use winnerWithBalance so dialog shows correct balance)
                 setRaffleResult({
-                    winner: winner,
-                    amount: response.data.raffle.prizeAmount
+                    winner: winnerWithBalance,
+                    amount: prizeAmount
                 });
             }
         } catch (err) {

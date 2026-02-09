@@ -68,7 +68,8 @@ def conduct_draw():
     db.session.add(transaction)
     
     db.session.commit()
-    
+    db.session.refresh(winner)  # Ensure winner reflects committed transaction for balance calc
+
     return jsonify({
         'success': True,
         'raffle': raffle.to_dict(),
