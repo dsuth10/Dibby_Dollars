@@ -3,6 +3,9 @@ Database Seeding Script
 
 Creates default behaviors, admin user, and sample data.
 """
+import os
+os.environ.setdefault("FLASK_ENV", "testing")  # Prevent scheduler from starting
+
 from app import create_app
 from api import db
 from api.models import User, UserRole, FocusBehavior, SystemConfig, Transaction, TransactionType
@@ -62,26 +65,55 @@ def seed_database():
             db.session.add(admin)
             print("  Created admin user (username: admin, password: admin123)")
         
-        # Create a demo teacher
-        teacher = User.query.filter_by(username='teacher').first()
-        if not teacher:
-            teacher = User(
-                username='teacher',
-                first_name='Demo',
-                last_name='Teacher',
-                role=UserRole.TEACHER
-            )
-            teacher.set_pin('teacher123')
-            db.session.add(teacher)
-            print("  Created demo teacher (username: teacher, password: teacher123)")
+        # Create demo teachers
+        demo_teachers = [
+            ("teacher", "Demo", "Teacher", "teacher123"),
+            ("jones", "Sarah", "Jones", "jones123"),
+            ("smith", "Michael", "Smith", "smith123"),
+        ]
         
-        # Create sample students
+        for username, first, last, pin in demo_teachers:
+            existing = User.query.filter_by(username=username).first()
+            if not existing:
+                teacher = User(
+                    username=username,
+                    first_name=first,
+                    last_name=last,
+                    role=UserRole.TEACHER
+                )
+                teacher.set_pin(pin)
+                db.session.add(teacher)
+                print(f"  Created teacher: {first} {last} (username: {username}, PIN: {pin})")
+        
+        # Create sample students across different classes
         sample_students = [
+            # Class 5A (Ms. Jones's class)
             ("Alice", "Johnson", "5A", "1111"),
             ("Bob", "Smith", "5A", "2222"),
-            ("Charlie", "Brown", "5B", "3333"),
-            ("Diana", "Prince", "5B", "4444"),
-            ("Ethan", "Hunt", "6A", "5555"),
+            ("Charlie", "Brown", "5A", "3333"),
+            ("Diana", "Prince", "5A", "4444"),
+            ("Emma", "Watson", "5A", "1234"),
+            
+            # Class 5B (Mr. Smith's class)
+            ("Ethan", "Hunt", "5B", "5555"),
+            ("Fiona", "Apple", "5B", "6666"),
+            ("George", "Martin", "5B", "7777"),
+            ("Hannah", "Montana", "5B", "8888"),
+            ("Isaac", "Newton", "5B", "4321"),
+            
+            # Class 6A (Ms. Jones's class)
+            ("Jack", "Sparrow", "6A", "9999"),
+            ("Kate", "Winslet", "6A", "1010"),
+            ("Liam", "Neeson", "6A", "2020"),
+            ("Maya", "Angelou", "6A", "3030"),
+            ("Noah", "Webster", "6A", "5678"),
+            
+            # Class 6B (Mr. Smith's class)
+            ("Olivia", "Wilde", "6B", "4040"),
+            ("Peter", "Parker", "6B", "5050"),
+            ("Quinn", "Fabray", "6B", "6060"),
+            ("Rachel", "Green", "6B", "7070"),
+            ("Sam", "Wilson", "6B", "8765"),
         ]
         
         for first, last, class_name, pin in sample_students:
@@ -108,19 +140,24 @@ def seed_database():
         students = User.query.filter_by(role=UserRole.STUDENT).all()
         admin = User.query.filter_by(username='admin').first()
         
-        for student in students:
+        for i, student in enumerate(students):
             existing_tx = Transaction.query.filter_by(user_id=student.id).first()
             if not existing_tx:
-                # Give initial deposit
+                # Give varied initial deposits for realistic testing
+                # Some students start with more, some with less
+                amounts = [150, 200, 175, 125, 100, 180, 90, 160, 140, 110, 
+                          195, 130, 170, 145, 105, 185, 155, 120, 165, 135]
+                amount = amounts[i % len(amounts)]
+                
                 tx = Transaction(
                     user_id=student.id,
-                    amount=10,
+                    amount=amount,
                     type=TransactionType.DEPOSIT,
                     notes="Welcome bonus",
                     created_by_id=admin.id if admin else None
                 )
                 db.session.add(tx)
-                print(f"  Gave {student.full_name} 10 DB$ welcome bonus")
+                print(f"  Gave {student.full_name} {amount} DB$ welcome bonus")
         
         db.session.commit()
         print("\nDatabase seeding complete!")
